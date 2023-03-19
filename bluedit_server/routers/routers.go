@@ -7,6 +7,7 @@ import (
 	"bluebell_backend/middlewares"
 	swaggerFiles "github.com/swaggo/files"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/swaggo/gin-swagger"
@@ -38,36 +39,69 @@ func SetupRouter(mode string) *gin.Engine {
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	//docs.SwaggerInfo.BasePath="/api/v1"
 	v1 := r.Group("/api/v1")
-	v1.POST("/login", controller.LoginHandler)
-	v1.POST("/signup", controller.SignUpHandler)				// 注册业务路由
-	v1.GET("/refresh_token", controller.RefreshTokenHandler)
-
-	v1.GET("/posts", controller.PostListHandler)		// 分页展示帖子列表
-	v1.GET("/posts2", controller.PostList2Handler) // 根据时间或者分数排序分页展示帖子列表
-	v1.GET("/community", controller.CommunityHandler)	// 获取分类社区列表
-	v1.GET("/community/:id", controller.CommunityDetailHandler)	// 根据ID查找社区详情
-	v1.GET("/post/:id", controller.PostDetailHandler) // 查询帖子详情
-
-	v1.Use(middlewares.JWTAuthMiddleware())	// 应用JWT认证中间件
+	v1.Use(middlewares.RateLimitMiddleware(100*time.Millisecond,256))
 	{
-		//v1.GET("/community", controller.CommunityHandler)	// 获取分类社区列表
-		//v1.GET("/community/:id", controller.CommunityDetailHandler)	// 根据ID查找社区详情
+		v1.POST("/login", controller.LoginHandler)
+		v1.POST("/signup", controller.SignUpHandler)				// 注册业务路由
+		v1.GET("/refresh_token", controller.RefreshTokenHandler)
 
-		v1.POST("/post", controller.CreatePostHandler)	 // 创建帖子
-		//v1.GET("/post/:id", controller.PostDetailHandler) // 查询帖子详情
-		//v1.GET("/posts", controller.PostListHandler)		// 分页展示帖子列表
-		//
-		//v1.GET("/posts2", controller.PostList2Handler) // 根据时间或者分数排序分页展示帖子列表
+		v1.GET("/posts", controller.PostListHandler)		// 分页展示帖子列表
+		v1.GET("/posts2", controller.PostList2Handler) // 根据时间或者分数排序分页展示帖子列表
+		v1.GET("/community", controller.CommunityHandler)	// 获取分类社区列表
+		v1.GET("/community/:id", controller.CommunityDetailHandler)	// 根据ID查找社区详情
+		v1.GET("/post/:id", controller.PostDetailHandler) // 查询帖子详情
+		v1.Use(middlewares.JWTAuthMiddleware())	// 应用JWT认证中间件
+		{
+			//v1.GET("/community", controller.CommunityHandler)	// 获取分类社区列表
+			//v1.GET("/community/:id", controller.CommunityDetailHandler)	// 根据ID查找社区详情
 
-		v1.POST("/vote", controller.VoteHandler)		   // 投票
+			v1.POST("/post", controller.CreatePostHandler)	 // 创建帖子
+			//v1.GET("/post/:id", controller.PostDetailHandler) // 查询帖子详情
+			//v1.GET("/posts", controller.PostListHandler)		// 分页展示帖子列表
+			//
+			//v1.GET("/posts2", controller.PostList2Handler) // 根据时间或者分数排序分页展示帖子列表
 
-		v1.POST("/comment", controller.CommentHandler)
-		v1.GET("/comment", controller.CommentListHandler)
+			v1.POST("/vote", controller.VoteHandler)		   // 投票
 
-		v1.GET("/ping", func(c *gin.Context) {
-			c.String(http.StatusOK, "pong")
-		})
+			v1.POST("/comment", controller.CommentHandler)
+			v1.GET("/comment", controller.CommentListHandler)
+
+			v1.GET("/ping", func(c *gin.Context) {
+				c.String(http.StatusOK, "pong")
+			})
+		}
+
 	}
+	//v1.POST("/login", controller.LoginHandler)
+	//v1.POST("/signup", controller.SignUpHandler)				// 注册业务路由
+	//v1.GET("/refresh_token", controller.RefreshTokenHandler)
+	//
+	//v1.GET("/posts", controller.PostListHandler)		// 分页展示帖子列表
+	//v1.GET("/posts2", controller.PostList2Handler) // 根据时间或者分数排序分页展示帖子列表
+	//v1.GET("/community", controller.CommunityHandler)	// 获取分类社区列表
+	//v1.GET("/community/:id", controller.CommunityDetailHandler)	// 根据ID查找社区详情
+	//v1.GET("/post/:id", controller.PostDetailHandler) // 查询帖子详情
+
+	//v1.Use(middlewares.JWTAuthMiddleware())	// 应用JWT认证中间件
+	//{
+	//	//v1.GET("/community", controller.CommunityHandler)	// 获取分类社区列表
+	//	//v1.GET("/community/:id", controller.CommunityDetailHandler)	// 根据ID查找社区详情
+	//
+	//	v1.POST("/post", controller.CreatePostHandler)	 // 创建帖子
+	//	//v1.GET("/post/:id", controller.PostDetailHandler) // 查询帖子详情
+	//	//v1.GET("/posts", controller.PostListHandler)		// 分页展示帖子列表
+	//	//
+	//	//v1.GET("/posts2", controller.PostList2Handler) // 根据时间或者分数排序分页展示帖子列表
+	//
+	//	v1.POST("/vote", controller.VoteHandler)		   // 投票
+	//
+	//	v1.POST("/comment", controller.CommentHandler)
+	//	v1.GET("/comment", controller.CommentListHandler)
+	//
+	//	v1.GET("/ping", func(c *gin.Context) {
+	//		c.String(http.StatusOK, "pong")
+	//	})
+	//}
 
 	pprof.Register(r)	// 注册pprof相关路由
 	r.NoRoute(func(c *gin.Context) {

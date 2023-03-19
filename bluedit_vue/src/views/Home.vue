@@ -22,13 +22,13 @@
           <div class="post">
             <a class="vote">
               <span class="iconfont icon-up"
-              @click="vote(post.id, '1')"
+              @click="vote(post.id, 1)"
               ></span>
             </a>
             <span class="text">{{post.vote_num}}</span>
             <a class="vote">
               <span class="iconfont icon-down"
-              @click="vote(post.id, '-1')"
+              @click="vote(post.id, -1)"
               ></span>
             </a>
           </div>
@@ -165,6 +165,7 @@ export default {
         .then(response => {
           if (response.code == 1000) {
             console.log("vote success");
+            this.getPostList()
           } else {
             console.log(response.msg);
           }

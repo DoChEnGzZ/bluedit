@@ -8,6 +8,7 @@ package redis
 import (
 	"bluebell_backend/models"
 	"github.com/go-redis/redis"
+	"go.uber.org/zap"
 	"strconv"
 	"time"
 )
@@ -56,8 +57,11 @@ func GetPostVoteData(ids []string) (data []int64, err error)  {
 	// 使用 pipeline一次发送多条命令减少RTT
 	pipeline := client.Pipeline()
 	for _, id := range ids{
-		key := KeyCommunityPostSetPrefix + id
+		//key := KeyCommunityPostSetPrefix + id
+		key:=KeyPostVotedZSetPrefix+id
 		pipeline.ZCount(key, "1", "1")
+		zap.L().Debug("get post vote",zap.Any("id",id),
+			zap.Any("votes",client.ZCount(key,"1","1").Val()))
 	}
 	cmders, err := pipeline.Exec()
 	if err != nil {

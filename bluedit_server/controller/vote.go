@@ -57,6 +57,7 @@ func VoteHandler(c *gin.Context) {
 	// 参数校验,给哪个文章投什么票
 	vote := new(models.VoteDataForm)
 	if err := c.ShouldBindJSON(&vote); err != nil {
+		zap.L().Error(err.Error())
 		errs, ok := err.(validator.ValidationErrors)	// 类型断言
 		if !ok {
 			ResponseError(c,CodeInvalidParams)
@@ -66,6 +67,8 @@ func VoteHandler(c *gin.Context) {
 		ResponseErrorWithMsg(c, CodeInvalidParams, errdata)
 		return
 	}
+	//zap.L().Debug("vote:postId,direction",
+	//	zap.String("postId",vote.PostID),zap.Int8("direction",vote.Direction))
 	// 获取当前请求用户的id，jwt鉴权
 	userID, err := getCurrentUserID(c)
 	if err != nil {
