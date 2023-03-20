@@ -42,7 +42,7 @@
 
 ## 压力测试
 
-设置全局中间件，令牌桶令牌512个，分别用`go-stress-test`测试400、1024、2048个ping请求的执行情况。
+设置全局中间件，令牌桶令牌256个，分别用`go-stress-test`测试400、1024、2048个ping请求的执行情况。
 
 ```go
 v1.Use(middlewares.RateLimitMiddleware(10*time.Millisecond,256))
@@ -61,15 +61,15 @@ func RateLimitMiddleware(fillInterval time.Duration, cap int64) func(c *gin.Cont
 }
 ```
 
-测试结果如下：可以看到
+测试结果如下：可以看到前315个请求请求成功，197个请求失败，因为令牌桶的256歌令牌被取完、恢复的令牌也被用完，此时令牌桶为空时的请求全部返回503，请求失败。
 
 ```bash
-dochengzz@chengnizhideair go-stress-testing % go run main.go -c 2 -n 200 -u http://localhost:8081/ping
+dochengzz@chengnizhideair go-stress-testing % go run main.go -c 1 -n 512 -u http://localhost:8081/api/v1/posts2
 
- 开始启动  并发数:2 请求数:200 请求参数: 
+ 开始启动  并发数:1 请求数:512 请求参数: 
 request:
  form:http 
- url:http://localhost:8081/ping 
+ url:http://localhost:8081/api/v1/posts2 
  method:GET 
  headers:map[Content-Type:application/x-www-form-urlencoded; charset=utf-8] 
  data: 
@@ -78,89 +78,29 @@ request:
  debug:false 
  http2.0：false 
  keepalive：false 
- maxCon:1 
+ maxCo
 
 
 ─────┬───────┬───────┬───────┬────────┬────────┬────────┬────────┬────────┬────────┬────────
  耗时│ 并发数│ 成功数│ 失败数│   qps  │最长耗时│最短耗时│平均耗时│下载字节│字节每秒│ 状态码
 ─────┼───────┼───────┼───────┼────────┼────────┼────────┼────────┼────────┼────────┼────────
-   0s│      2│    400│      0│ 1152.47│  109.21│    0.33│    1.74│   5,200│  14,632│200:400
+   1s│      1│     53│      0│   53.24│   52.75│   15.51│   18.78│  50,774│  50,758│200:53
+   2s│      1│    109│      0│   54.98│   52.75│   15.51│   18.19│ 104,422│  52,186│200:109
+   3s│      1│    166│      0│   55.57│   52.75│   15.18│   17.99│ 159,028│  53,001│200:166
+   4s│      1│    216│      0│   54.40│   74.79│   15.18│   18.38│ 206,928│  51,724│200:216
+   5s│      1│    270│      0│   54.23│   74.79│   15.06│   18.44│ 258,660│  51,725│200:270
+   6s│      1│    315│    197│   53.68│   74.79│    0.27│   18.63│ 304,331│  51,672│200:315;503:197
 
 
 *************************  结果 stat  ****************************
-处理协程数量: 2
-请求总数（并发数*请求数 -c * -n）: 400 总请求时间: 0.355 秒 successNum: 400 failureNum: 0
-tp90: 1.000
-tp95: 2.000
-tp99: 23.000
+处理协程数量: 1
+请求总数（并发数*请求数 -c * -n）: 512 总请求时间: 5.890 秒 successNum: 315 failureNum: 197
+tp90: 18.000
+tp95: 20.000
+tp99: 28.000
 *************************  结果 end   ****************************
-
-
-dochengzz@chengnizhideair go-stress-testing % go run main.go -c 2 -n 512 -u http://localhost:8081/ping
-
- 开始启动  并发数:2 请求数:512 请求参数: 
-request:
- form:http 
- url:http://localhost:8081/ping 
- method:GET 
- headers:map[Content-Type:application/x-www-form-urlencoded; charset=utf-8] 
- data: 
- verify:statusCode 
- timeout:30s 
- debug:false 
- http2.0：false 
- keepalive：false 
- maxCon:1 
-
-
-─────┬───────┬───────┬───────┬────────┬────────┬────────┬────────┬────────┬────────┬────────
- 耗时│ 并发数│ 成功数│ 失败数│   qps  │最长耗时│最短耗时│平均耗时│下载字节│字节每秒│ 状态码
-─────┼───────┼───────┼───────┼────────┼────────┼────────┼────────┼────────┼────────┼────────
-   0s│      2│   1024│      0│ 3874.38│   14.89│    0.13│    0.52│  13,312│  48,190│200:1024
-
-
-*************************  结果 stat  ****************************
-处理协程数量: 2
-请求总数（并发数*请求数 -c * -n）: 1024 总请求时间: 0.276 秒 successNum: 1024 failureNum: 0
-tp90: 0.000
-tp95: 0.000
-tp99: 2.000
-*************************  结果 end   ****************************
-
-
-dochengzz@chengnizhideair go-stress-testing % go run main.go -c 2 -n 1024 -u http://localhost:8081/ping
-
- 开始启动  并发数:2 请求数:1024 请求参数: 
-request:
- form:http 
- url:http://localhost:8081/ping 
- method:GET 
- headers:map[Content-Type:application/x-www-form-urlencoded; charset=utf-8] 
- data: 
- verify:statusCode 
- timeout:30s 
- debug:false 
- http2.0：false 
- keepalive：false 
- maxCon:1 
-
-
-─────┬───────┬───────┬───────┬────────┬────────┬────────┬────────┬────────┬────────┬────────
- 耗时│ 并发数│ 成功数│ 失败数│   qps  │最长耗时│最短耗时│平均耗时│下载字节│字节每秒│ 状态码
-─────┼───────┼───────┼───────┼────────┼────────┼────────┼────────┼────────┼────────┼────────
-   1s│      2│   2048│      0│ 2479.81│  209.75│    0.15│    0.81│  26,624│  30,981│200:2048
-
-
-*************************  结果 stat  ****************************
-处理协程数量: 2
-请求总数（并发数*请求数 -c * -n）: 2048 总请求时间: 0.859 秒 successNum: 2048 failureNum: 0
-tp90: 0.000
-tp95: 1.000
-tp99: 2.000
-*************************  结果 end   ****************************
-
-
-dochengzz@chengnizhideair go-stress-testing % 
-
 ```
 
+在日志中可以看到前一个get请求返回了论坛首页的3个帖子，后一个请求因为令牌桶已经空的原因终止了请求。
+
+![](./pic/stressTestLog01.jpg)

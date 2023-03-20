@@ -11,14 +11,14 @@ import (
 	"fmt"
 )
 
-//@title bluebell_backend
-//@version 1.0
-//@description bluebell_backend测试
+//@title bluedit
+//@version 0.1
+//@description bluedit_dev
 //@termsOfService http://swagger.io/terms/
 //
-//@contact.name author：@huchao
+//@contact.name author：@chengnianzhi
 //@contact.url http://www.swagger.io/support
-//@contact.email support@swagger.io
+//@contact.email dochengzz@hotmail.com
 //
 //@license.name Apache 2.0
 //@license.url http://www.apache.org/licenses/LICENSE-2.0.html

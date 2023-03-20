@@ -38,6 +38,7 @@ func GetPostIDsInOrder(p *models.ParamPostList) ([] string, error)  {
 		key = KeyPostScoreZSet
 	}
 	// 2.确定查询的索引起始点
+	zap.L().Debug("page",zap.Int64("page",p.Page),zap.Int64("size",p.Size))
 	return getIDsFormKey(key, p.Page ,p.Size)
 }
 
