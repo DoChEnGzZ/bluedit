@@ -59,7 +59,7 @@ func SetupRouter(mode string) *gin.Engine {
 		//v1.GET("/posts", controller.PostListHandler)		// 分页展示帖子列表
 		//
 		//v1.GET("/posts2", controller.PostList2Handler) // 根据时间或者分数排序分页展示帖子列表
-
+		v1.POST("/updatePost",controller.UpdatePostHandler)//更新帖子
 		v1.POST("/vote", controller.VoteHandler)		   // 投票
 
 		v1.POST("/comment", controller.CommentHandler)
@@ -102,7 +102,7 @@ func SetupRouter(mode string) *gin.Engine {
 
 	pprof.Register(r)	// 注册pprof相关路由
 	r.NoRoute(func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusNotFound, gin.H{
 			"msg": "404",
 		})
 	})

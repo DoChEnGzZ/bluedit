@@ -6,8 +6,8 @@ import (
 	"bluebell_backend/models"
 	"bluebell_backend/pkg/snowflake"
 	"fmt"
-
 	"go.uber.org/zap"
+	"strconv"
 )
 
 /**
@@ -136,7 +136,7 @@ func GetPostList2(p *models.ParamPostList) (data []*models.ApiPostDetail, err er
 	// 2、去redis查询id列表
 	ids, err := redis.GetPostIDsInOrder(p)
 	if err != nil {
-		return
+		zap.L().Error("redis.GetPostIDsInOrder(p) failed", zap.Error(err))
 	}
 	if len(ids) == 0 {
 		zap.L().Warn("redis.GetPostIDsInOrder(p) return 0 data")
@@ -149,12 +149,45 @@ func GetPostList2(p *models.ParamPostList) (data []*models.ApiPostDetail, err er
 		return
 	}
 
-	// 3、根据id去数据库查询帖子详细信息
+	// 3、如果缓存中没有根据id去数据库查询帖子详细信息
 	// 返回的数据还要按照我给定的id的顺序返回  order by FIND_IN_SET(post_id, ?)
-	posts, err := mysql.GetPostListByIDs(ids)
-	if err != nil {
-		return
+	posts:=make([]*models.Post,0,len(ids))
+	for _,id:=range ids{
+		//id64,_:=strconv.ParseInt(id,10,64)
+		post,err:=redis.GetPostByID(id)
+		//没有从缓存中获取到数据
+		if err!=nil{
+			zap.L().Info("GetPostById failed",zap.Any("id",id),zap.Error(err))
+			id64,_:=strconv.ParseInt(id,10,64)
+			//从mysql中获取帖子数据
+			post,err=mysql.GetPostByID(id64)
+			if err!=nil{
+				zap.L().Error("mysql.GetPostByID failed",zap.Any("id",id),zap.Error(err))
+				continue
+			}
+			//todo：解决缓存一致性问题，当前先删除缓存再更新数据
+			err := redis.UpdatePostCache(post.PostID, post.AuthorId, post.Title,
+				TruncateByWords(post.Content, 120), post.CommunityID, post.CreateTime)
+			if err != nil {
+				return nil, err
+			}
+			posts=append(posts,post)
+			continue
+		}
+		posts=append(posts,post)
+		//zap.L().Debug("GetPostById redis success",zap.Any("id",id),zap.Any("post",post))
 	}
+	//posts, err = mysql.GetPostListByIDs(ids)
+	//更新redis中的post的community id name
+	//for _,post:=range posts{
+	//	err := redis.UpdatePostCache(post.PostID, post.AuthorId, post.Title,
+	//		TruncateByWords(post.Content,120), post.CommunityID,
+	//		post.CreateTime)
+	//	if err != nil {
+	//		zap.L().Error("redis.UpdatePostCache failed", zap.Error(err))
+	//		continue
+	//	}
+	//}
 	// 将帖子的作者及分区信息查询出来填充到帖子中
 	for idx, post := range posts {
 		// 根据作者id查询作者信息

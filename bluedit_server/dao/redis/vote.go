@@ -3,7 +3,6 @@ package redis
 import (
 	"go.uber.org/zap"
 	"math"
-	"strconv"
 	"time"
 
 	"github.com/go-redis/redis"
@@ -45,12 +44,13 @@ v=-1时，有两种情况
 func VoteForPost(userID string, postID string, v float64) (err error) {
 	// 1.判断投票限制
 	// 去redis取帖子发布时间
-	postTime := client.ZScore(KeyPostTimeZSet, postID).Val()
-	if float64(time.Now().Unix())-postTime > OneWeekInSeconds {		// Unix()时间戳
-		// 不允许投票了
-		//zap.L().Error("out time")
-		return ErrorVoteTimeExpire
-	}
+	//todo:no vote expire
+	//postTime := client.ZScore(KeyPostTimeZSet, postID).Val()
+	//if float64(time.Now().Unix())-postTime > OneWeekInSeconds {		// Unix()时间戳
+	//	// 不允许投票了
+	//	//zap.L().Error("out time")
+	//	return ErrorVoteTimeExpire
+	//}
 	// 2、更新帖子的分数
 	// 2和3 需要放到一个pipeline事务中操作
 	// 判断是否已经投过票 查当前用户给当前帖子的投票记录
@@ -108,78 +108,7 @@ func VoteForPost(userID string, postID string, v float64) (err error) {
 	return err
 }
 
-/**
- * @Author huchao
- * @Description //TODO redis存储帖子信息
- * @Date 17:08 2022/2/14
- **/
-// CreatePost 使用hash存储帖子信息
-func CreatePost(postID, userID uint64, title, summary string, CommunityID uint64) (err error) {
-	now := float64(time.Now().Unix())
-	votedKey := KeyPostVotedZSetPrefix + strconv.Itoa(int(postID))
-	communityKey := KeyCommunityPostSetPrefix + strconv.Itoa(int(CommunityID))
-	postInfo := map[string]interface{}{
-		"title":    title,
-		"summary":  summary,
-		"post:id":  postID,
-		"user:id":  userID,
-		"time":     now,
-		"votes":    1,
-		"comments": 0,
-	}
 
-	// 事务操作
-	pipeline := client.TxPipeline()
-	pipeline.ZAdd(votedKey, redis.Z{ // 作者默认投赞成票
-		Score:  1,
-		Member: userID,
-	})
-	pipeline.Expire(votedKey, time.Second*OneWeekInSeconds) // 一周时间
-
-	pipeline.HMSet(KeyPostInfoHashPrefix+strconv.Itoa(int(postID)), postInfo)
-	pipeline.ZAdd(KeyPostScoreZSet, redis.Z{ // 添加到分数的ZSet
-		Score:  now + VoteScore,
-		Member: postID,
-	})
-	pipeline.ZAdd(KeyPostTimeZSet, redis.Z{ // 添加到时间的ZSet
-		Score:  now,
-		Member: postID,
-	})
-	pipeline.SAdd(communityKey, postID) // 添加到对应版块  把帖子添加到社区的set
-	_, err = pipeline.Exec()
-	return
-}
-
-// GetPost 从key中分页取出帖子
-func GetPost(order string, page int64) []map[string]string {
-	key := KeyPostScoreZSet
-	if order == "time" {
-		key = KeyPostTimeZSet
-	}
-	start := (page - 1) * PostPerAge
-	end := start + PostPerAge - 1
-	ids := client.ZRevRange(key, start, end).Val()
-	postList := make([]map[string]string, 0, len(ids))
-	for _, id := range ids {
-		postData := client.HGetAll(KeyPostInfoHashPrefix + id).Val()
-		postData["id"] = id
-		postList = append(postList, postData)
-	}
-	return postList
-}
-
-// GetCommunityPost 分社区根据发帖时间或者分数取出分页的帖子
-func GetCommunityPost(communityName, orderKey string, page int64) []map[string]string {
-	key := orderKey + communityName // 创建缓存键
-
-	if client.Exists(key).Val() < 1 {
-		client.ZInterStore(key, redis.ZStore{
-			Aggregate: "MAX",
-		}, KeyCommunityPostSetPrefix+communityName, orderKey)
-		client.Expire(key, 60*time.Second)
-	}
-	return GetPost(key, page)
-}
 
 // Reddit Hot rank algorithms
 // from https://github.com/reddit-archive/reddit/blob/master/r2/r2/lib/db/_sorts.pyx

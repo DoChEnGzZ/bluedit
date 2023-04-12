@@ -26,7 +26,7 @@ var (
 // @Accept application/json
 // @Produce application/json
 // @Param Authorization header string true "Bearer 用户令牌"
-// @Param object query userID  path    int     true        "_userID"
+// @Param object query int true "_userID"
 // @Security ApiKeyAuth
 // @Success 200 {object} _ResponsePostList
 func getCurrentUserID(c *gin.Context) (userID uint64, err error) {

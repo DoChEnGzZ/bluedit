@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"bluebell_backend/dao/mysql"
+	"bluebell_backend/dao/redis"
 	"bluebell_backend/logic"
 	"bluebell_backend/models"
 	"strconv"
@@ -22,7 +24,7 @@ import (
 // @Accept application/json
 // @Produce application/json
 // @Param Authorization header string true "Bearer 用户令牌"
-// @Param object query models.Post false "查询参数"
+// @Param object query models.Post false "帖子信息"
 // @Security ApiKeyAuth
 // @Success 200 {object} _ResponsePostList
 // @Router /post [POST]
@@ -158,7 +160,7 @@ func PostList2Handler(c *gin.Context)  {
 // @Accept application/json
 // @Produce application/json
 // @Param Authorization header string true "Bearer 用户令牌"
-// @Param object query postId  path    int     true        "id"
+// @Param object query int true "帖子id"
 // @Security ApiKeyAuth
 // @Success 200 {object} _ResponsePostList
 // @Router /post/:id [get]
@@ -180,6 +182,48 @@ func PostDetailHandler(c *gin.Context) {
 
 	// 3、返回响应
 	ResponseSuccess(c, post)
+}
+
+// UpdatePostHandler 更新帖子
+// @Summary: 更新帖子
+// @Description: 帖子作者可以更新帖子主题和内容
+// @Tags 帖子相关接口
+// @Accept application/json
+// @Produce application/json
+// @Param Authorization header string true "Bearer 用户令牌"
+// @Param object query models.Post false "帖子信息"
+// @Security ApiKeyAuth
+// @Success 200 {object} _ResponsePostList
+// @Router /updatePost [POST]
+func UpdatePostHandler(c *gin.Context)  {
+	var post models.Post
+	if err := c.ShouldBindJSON(&post); err != nil {
+		zap.L().Error("UpdatePostHandler with invalid params",zap.Error(err))
+		ResponseError(c, CodeInvalidParams)
+		return
+	}
+	postR, err := redis.GetPostByID(strconv.FormatUint(post.AuthorId, 10))
+	if err != nil {
+		zap.L().Error("UpdatePostHandler with invalid params",zap.Error(err))
+	}
+	err = redis.DeletePostCache(post.AuthorId)
+	if err != nil {
+		zap.L().Error("UpdatePostHandler with invalid params",zap.Error(err))
+	}
+	err = mysql.UpdatePost(&post)
+	if err != nil {
+		// 回滚
+		err := redis.CreatePost(postR.PostID, postR.AuthorId, postR.Title,
+			logic.TruncateByWords(postR.Content, 120), uint64(postR.CreateTime.Unix()))
+		if err != nil {
+			zap.L().Error("UpdatePostHandler with invalid params",zap.Error(err))
+			return
+		}
+		zap.L().Error("UpdatePostHandler with invalid params",zap.Error(err))
+		ResponseError(c, CodeServerBusy)
+		return
+	}
+	ResponseSuccess(c, nil)
 }
 
 /**

@@ -14,13 +14,14 @@ import (
 // 内存对齐概念 字段类型相同的对齐 缩小变量所占内存大小
 type Post struct {
 	//PostID      uint64    `json:"post_id,string" db:"post_id"`
-	PostID      uint64    `json:"id,string" db:"post_id"`
-	AuthorId    uint64    `json:"author_id" db:"author_id"`
-	CommunityID uint64     `json:"community_id" db:"community_id" binding:"required"`
-	Status      int32     `json:"status" db:"status"`
-	Title       string    `json:"title" db:"title" binding:"required"`
-	Content     string    `json:"content" db:"content" binding:"required"`
-	CreateTime  time.Time `json:"-" db:"create_time"`
+	PostID      uint64    `json:"id,string" db:"post_id" redis:"post:id"`
+	AuthorId    uint64    `json:"author_id" db:"author_id" redis:"user:id"`
+	CommunityID uint64     `json:"community_id" db:"community_id" redis:"community:id" binding:"required"`
+	Status      int32     `json:"status" db:"status" redis:"status"`
+	Title       string    `json:"title" db:"title" redis:"title" binding:"required"`
+	Content     string    `json:"content" db:"content" redis:"content" binding:"required"`
+	Summary	 string    `json:"summary" db:"summary" redis:"summary"`
+	CreateTime  time.Time `json:"-" db:"create_time" redis:"create_time"`
 	VoteNum 	  int64  `json:"vote_num"`
 }
 

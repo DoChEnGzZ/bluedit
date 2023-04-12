@@ -5,6 +5,13 @@ import (
 	"unicode/utf8"
 )
 
+/*
+ *TruncateByWords
+ *@Description: 截断文章内容，以maxwords为界限
+ *@param s string 文章内容
+ *@param maxWords int 最大单词数
+ *@return string
+*/
 func TruncateByWords(s string, maxWords int) string {
 	processedWords := 0
 	wordStarted := false

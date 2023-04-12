@@ -21,8 +21,8 @@ import (
  * @Date 21:48 2022/2/10
  **/
 // SignUpHandler 注册业务
-// @Summary 注册业务
-// @Description 注册业务
+// @Summary 用户注册业务
+// @Description 用于用户的注册
 // @Tags 用户业务接口
 // @Accept application/json
 // @Produce application/json
@@ -83,14 +83,10 @@ func SignUpHandler(c *gin.Context) {
 	ResponseSuccess(c, nil)
 }
 
-/**
- * @Author huchao
- * @Description //TODO 登录业务
- * @Date 21:49 2022/2/10
- **/
+// LoginHandler /**
 // LoginHandler 登录业务
-// @Summary 登录业务
-// @Description 登录业务
+// @Summary 用户登录业务
+// @Description 用于用户的登录
 // @Tags 用户业务接口
 // @Accept application/json
 // @Produce application/json

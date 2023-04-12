@@ -89,5 +89,20 @@ func GetPostList(page, size int64) (posts []*models.Post, err error) {
 	posts = make([]*models.Post, 0, 2)	// 0：长度  2：容量
 	err = db.Select(&posts, sqlStr,(page-1)*size,size)
 	return
+}
 
+/*
+/*UpdatePost
+//@Description: 更新帖子
+//@param post: 帖子结构体
+/*@return err
+*/
+func UpdatePost(post *models.Post) (err error) {
+	sqlStr := `update post set title=?, content=?,create_time=? where post_id=?`
+	_, err = db.Exec(sqlStr, post.Title, post.Content, post.CreateTime,post.PostID)
+	if err != nil {
+		zap.L().Error("update post failed", zap.Error(err))
+		return err
+	}
+	return
 }

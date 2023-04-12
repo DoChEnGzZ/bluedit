@@ -49,7 +49,7 @@ func CommunityHandler(c *gin.Context) {
 // @Accept application/json
 // @Produce application/json
 // @Param Authorization header string true "Bearer 用户令牌"
-// @Param object query communityId     path    int     true        "id"
+// @Param object query int true "社区id"
 // @Security ApiKeyAuth
 // @Success 200 {object} _ResponsePostList
 // @Router /community/:id [get]
